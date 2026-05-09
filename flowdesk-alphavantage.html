@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowDesk — Smart Money Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #00e5a0; --red: #ff4d6d; --amber: #f5a623; --accent: #6c63ff;
+  --bg: #09090f; --surface: #0f0f1a; --surface2: #15151f;
+  --border: rgba(255,255,255,0.09); --text: rgba(255,255,255,0.92); --muted: rgba(255,255,255,0.38);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overflow-x: hidden; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+@keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* NAV */
+nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; background:rgba(9,9,15,0.95); backdrop-filter:blur(12px); }
+.logo { font-family:'Syne',sans-serif; font-weight:800; font-size:22px; letter-spacing:-0.5px; }
+.logo span { color:var(--green); }
+.nav-links { display:flex; gap:28px; list-style:none; }
+.nav-links a { font-size:12px; color:var(--muted); text-decoration:none; transition:color .2s; }
+.nav-links a:hover { color:var(--text); }
+.nav-right { display:flex; gap:10px; align-items:center; }
+.btn { padding:8px 18px; border-radius:7px; font-family:'DM Mono',monospace; font-size:12px; cursor:pointer; transition:all .2s; }
+.btn-ghost { background:none; border:0.5px solid var(--border); color:var(--muted); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--text); }
+.btn-primary { background:var(--green); border:none; color:#09090f; font-weight:500; }
+.btn-primary:hover { opacity:.85; }
+
+/* TICKER TAPE */
+.tape { overflow:hidden; border-bottom:0.5px solid var(--border); padding:9px 0; white-space:nowrap; background:var(--surface); }
+.tape-track { display:inline-flex; animation:scroll 45s linear infinite; }
+.tape-item { display:inline-flex; align-items:center; gap:8px; margin-right:48px; font-size:11px; padding:0 4px; }
+.tape-sym { font-weight:500; color:var(--text); }
+.up { color:var(--green); } .dn { color:var(--red); }
+
+/* HERO */
+.hero { padding:90px 40px 70px; max-width:960px; margin:0 auto; animation:fadeIn .6s ease; }
+.hero-badge { display:inline-flex; align-items:center; gap:8px; border:0.5px solid rgba(0,229,160,0.4); color:var(--green); padding:5px 14px; border-radius:100px; font-size:11px; margin-bottom:32px; }
+.bdot { width:6px; height:6px; background:var(--green); border-radius:50%; animation:blink 1.4s infinite; flex-shrink:0; }
+.hero h1 { font-family:'Syne',sans-serif; font-size:56px; font-weight:800; line-height:1.04; letter-spacing:-2.5px; margin-bottom:22px; }
+.hero h1 em { font-style:normal; color:var(--green); }
+.hero p { color:var(--muted); font-size:14px; line-height:1.85; max-width:540px; margin-bottom:36px; }
+.hero-ctas { display:flex; gap:14px; }
+.btn-lg { padding:13px 30px; border-radius:8px; font-size:13px; font-family:'DM Mono',monospace; cursor:pointer; font-weight:500; transition:all .2s; }
+.btn-lg.primary { background:var(--green); color:#09090f; border:none; }
+.btn-lg.primary:hover { opacity:.87; transform:translateY(-1px); }
+.btn-lg.ghost { background:none; border:0.5px solid var(--border); color:var(--muted); }
+.btn-lg.ghost:hover { border-color:rgba(255,255,255,.3); color:var(--text); }
+
+/* STATS */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); margin:0 40px 50px; border:0.5px solid var(--border); border-radius:12px; overflow:hidden; }
+.stat { padding:20px 22px; border-right:0.5px solid var(--border); background:var(--surface); }
+.stat:last-child { border-right:none; }
+.stat-label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px; }
+.stat-val { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; transition:all .3s; }
+.stat-val.g { color:var(--green); } .stat-val.a { color:var(--amber); }
+.stat-sub { font-size:10px; color:var(--muted); margin-top:4px; }
+
+/* ALERT */
+.alert-banner { margin:0 40px 14px; padding:11px 18px; border:0.5px solid rgba(245,166,35,0.35); border-radius:8px; background:rgba(245,166,35,0.05); display:flex; align-items:center; gap:12px; font-size:12px; min-height:42px; }
+.alert-dot { width:7px; height:7px; background:var(--amber); border-radius:50%; flex-shrink:0; animation:blink 1s infinite; }
+.alert-tag { color:var(--amber); font-weight:500; flex-shrink:0; }
+
+/* DASHBOARD */
+.sec-label { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); padding:0 40px; margin-bottom:16px; }
+.dashboard { margin:0 40px 56px; border:0.5px solid var(--border); border-radius:14px; overflow:hidden; background:var(--surface); }
+.dash-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:0.5px solid var(--border); flex-wrap:wrap; gap:8px; }
+.dash-tabs { display:flex; gap:2px; }
+.tab { padding:7px 16px; font-size:11px; font-family:'DM Mono',monospace; cursor:pointer; border-radius:6px; color:var(--muted); background:none; border:none; transition:all .2s; }
+.tab.active { background:rgba(255,255,255,0.07); color:var(--text); }
+.tab:hover:not(.active) { color:rgba(255,255,255,.6); }
+.live-badge { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--green); border:0.5px solid rgba(0,229,160,.25); padding:4px 10px; border-radius:100px; }
+.dash-body { display:flex; min-height:340px; }
+.dash-main { flex:1; overflow-x:auto; }
+.dash-side { width:240px; border-left:0.5px solid var(--border); padding:18px; flex-shrink:0; }
+
+/* FILTER BAR */
+.filter-bar { display:flex; gap:8px; padding:10px 16px; border-bottom:0.5px solid var(--border); flex-wrap:wrap; align-items:center; background:rgba(255,255,255,.02); }
+.filter-label { font-size:10px; color:var(--muted); }
+.filter-btn { padding:4px 12px; border-radius:100px; font-size:10px; font-family:'DM Mono',monospace; cursor:pointer; border:0.5px solid var(--border); background:none; color:var(--muted); transition:all .2s; }
+.filter-btn.active { background:rgba(255,255,255,.08); color:var(--text); border-color:rgba(255,255,255,.2); }
+.ticker-select { background:var(--surface2); border:0.5px solid var(--border); color:var(--text); padding:4px 10px; border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; }
+.refresh-btn { margin-left:auto; padding:5px 14px; border-radius:6px; font-size:10px; font-family:'DM Mono',monospace; cursor:pointer; border:0.5px solid var(--border); background:none; color:var(--muted); transition:all .2s; }
+.refresh-btn:hover { color:var(--text); border-color:rgba(255,255,255,.2); }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:11.5px; }
+thead tr { border-bottom:0.5px solid var(--border); }
+th { text-align:left; padding:10px 14px; color:var(--muted); font-weight:400; white-space:nowrap; font-size:10px; text-transform:uppercase; letter-spacing:1px; }
+td { padding:10px 14px; border-bottom:0.5px solid rgba(255,255,255,.04); white-space:nowrap; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.02); }
+.sym { font-weight:500; }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:500; }
+.badge.call { background:rgba(0,229,160,.12); color:var(--green); }
+.badge.put { background:rgba(255,77,109,.12); color:var(--red); }
+.badge.sweep { background:rgba(245,166,35,.12); color:var(--amber); }
+.badge.block { background:rgba(108,99,255,.12); color:#b0a8ff; }
+.badge.unusual { background:rgba(0,229,160,.07); color:var(--green); border:0.5px solid rgba(0,229,160,.3); }
+.g { color:var(--green); } .r { color:var(--red); } .m { color:var(--muted); }
+
+/* SIDE */
+.side-title { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:14px; }
+.hf-row { padding:9px 0; border-bottom:0.5px solid rgba(255,255,255,.05); }
+.hf-row:last-child { border-bottom:none; }
+.hf-name { font-size:12px; font-weight:500; margin-bottom:3px; }
+.hf-meta { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+.s-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; font-size:10px; }
+.s-track { flex:1; height:5px; border-radius:3px; overflow:hidden; }
+.s-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+
+/* FEATURES */
+.features { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:0 40px 56px; }
+.feat { background:var(--surface); border:0.5px solid var(--border); border-radius:12px; padding:24px; transition:border-color .25s,transform .25s; }
+.feat:hover { border-color:rgba(108,99,255,.4); transform:translateY(-2px); }
+.feat-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:14px; }
+.feat h3 { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; margin-bottom:8px; }
+.feat p { font-size:11.5px; color:var(--muted); line-height:1.75; }
+
+/* HOW */
+.how { display:grid; grid-template-columns:repeat(4,1fr); margin:0 40px 56px; border:0.5px solid var(--border); border-radius:12px; overflow:hidden; }
+.step { padding:28px 22px; border-right:0.5px solid var(--border); background:var(--surface); }
+.step:last-child { border-right:none; }
+.step-num { font-family:'Syne',sans-serif; font-size:38px; font-weight:800; color:rgba(255,255,255,.05); margin-bottom:10px; }
+.step h4 { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; margin-bottom:8px; }
+.step p { font-size:11px; color:var(--muted); line-height:1.7; }
+
+/* PRICING */
+.pricing { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:0 40px 56px; }
+.price-card { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:28px; transition:transform .2s; }
+.price-card:hover { transform:translateY(-3px); }
+.price-card.featured { border-color:var(--green); background:var(--surface2); }
+.tier { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:10px; }
+.price { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; margin-bottom:4px; }
+.price-note { font-size:11px; color:var(--muted); margin-bottom:22px; }
+.feat-list { list-style:none; display:flex; flex-direction:column; gap:9px; margin-bottom:24px; font-size:11.5px; color:var(--muted); }
+.feat-list li::before { content:'✓  '; color:var(--green); }
+.popular-tag { background:var(--green); color:#09090f; font-size:9px; padding:3px 9px; border-radius:100px; display:inline-block; margin-bottom:14px; font-weight:600; }
+.price-btn { width:100%; padding:11px; border-radius:8px; font-family:'DM Mono',monospace; font-size:12px; cursor:pointer; transition:all .2s; font-weight:500; }
+.price-btn.outline { background:none; border:0.5px solid var(--border); color:var(--muted); }
+.price-btn.outline:hover { border-color:rgba(255,255,255,.25); color:var(--text); }
+.price-btn.solid { background:var(--green); border:none; color:#09090f; }
+.price-btn.solid:hover { opacity:.85; }
+
+/* TESTIMONIALS */
+.testimonials { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:0 40px 56px; }
+.testi { background:var(--surface); border:0.5px solid var(--border); border-radius:12px; padding:22px; }
+.testi-text { font-size:12px; color:rgba(255,255,255,.65); line-height:1.8; margin-bottom:16px; font-style:italic; }
+.testi-author { display:flex; align-items:center; gap:10px; }
+.testi-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; }
+.testi-name { font-size:12px; font-weight:500; }
+.testi-role { font-size:10px; color:var(--muted); }
+
+/* CTA */
+.cta-section { margin:0 40px 60px; background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:56px 40px; text-align:center; }
+.cta-section h2 { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; letter-spacing:-1px; margin-bottom:14px; }
+.cta-section p { color:var(--muted); font-size:13px; margin-bottom:28px; }
+
+/* FOOTER */
+footer { border-top:0.5px solid var(--border); padding:28px 40px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.footer-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; }
+.footer-links { display:flex; gap:24px; font-size:11px; }
+.footer-links a { text-decoration:none; color:var(--muted); transition:color .2s; }
+.footer-links a:hover { color:var(--text); }
+.footer-copy { font-size:11px; color:var(--muted); }
+
+/* MISC */
+.loading-row td { color:var(--muted); text-align:center; padding:40px; font-size:12px; }
+.error-box { margin:16px; padding:14px 18px; background:rgba(255,77,109,.07); border:0.5px solid rgba(255,77,109,.25); border-radius:8px; font-size:12px; color:var(--red); line-height:1.8; }
+.info-box { margin:16px; padding:14px 18px; background:rgba(108,99,255,.06); border:0.5px solid rgba(108,99,255,.2); border-radius:8px; font-size:11px; color:rgba(255,255,255,.5); line-height:1.8; }
+
+@media (max-width:900px) {
+  .hero h1 { font-size:34px; letter-spacing:-1px; }
+  .stats, .features, .pricing, .testimonials, .how { grid-template-columns:1fr; }
+  nav { padding:14px 20px; }
+  .nav-links { display:none; }
+  .hero, .sec-label, .stats, .features, .pricing, .testimonials, .how, .cta-section, .dashboard, .alert-banner { padding-left:16px; padding-right:16px; margin-left:0; margin-right:0; }
+  .dash-side { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+  CONFIGURATION
+  1. Open this file in Notepad
+  2. Find:  PASTE_YOUR_ALPHAVANTAGE_KEY_HERE
+  3. Replace with your Alpha Vantage key from alphavantage.co
+  4. Save the file (Ctrl+S)
+  5. Drag to netlify.com/drop
+================================================================ -->
+<script>
+const AV_KEY = '2TFVEH6KNVNWRMYI';
+const AV = 'https://www.alphavantage.co/query';
+
+// Watchlist tickers
+const WATCH = ['SPY','NVDA','TSLA','AAPL','AMD','META','AMZN','MSFT','QQQ','GOOGL'];
+
+let optionsData = { calls: [], puts: [] };
+let filterType = 'ALL';
+let alertCount = 0;
+
+function fmt$(n) {
+  n = Number(n);
+  if (!n) return '—';
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(2);
+}
+
+function setStatus(state) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  const map = {
+    ok:      ['var(--green)', 'Live'],
+    error:   ['var(--red)',   'API Error'],
+    loading: ['var(--amber)', 'Loading…']
+  };
+  dot.style.background = map[state][0];
+  txt.textContent = map[state][1];
+  txt.style.color = map[state][0];
+}
+
+async function avFetch(params) {
+  const url = AV + '?' + new URLSearchParams({ ...params, apikey: AV_KEY });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data['Note']) throw new Error('Rate limit hit — Alpha Vantage allows 25 calls/day free. Try again tomorrow or upgrade at alphavantage.co');
+  if (data['Information']) throw new Error(data['Information']);
+  return data;
+}
+</script>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Flow<span>Desk</span></div>
+  <ul class="nav-links">
+    <li><a href="#flow">Option Flow</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div class="nav-right">
+    <span id="api-status" style="display:flex;align-items:center;gap:6px;font-size:10px;">
+      <span id="status-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block;"></span>
+      <span id="status-text" style="color:var(--muted);">Connecting…</span>
+    </span>
+    <button class="btn btn-ghost">Sign in</button>
+    <button class="btn btn-primary">Start free trial</button>
+  </div>
+</nav>
+
+<!-- TICKER TAPE -->
+<div class="tape">
+  <div class="tape-track" id="tape-inner">
+    <span class="tape-item"><span class="tape-sym">SPY</span><span id="p-SPY" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">NVDA</span><span id="p-NVDA" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">TSLA</span><span id="p-TSLA" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AAPL</span><span id="p-AAPL" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AMD</span><span id="p-AMD" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">META</span><span id="p-META" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AMZN</span><span id="p-AMZN" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">MSFT</span><span id="p-MSFT" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">QQQ</span><span id="p-QQQ" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">GOOGL</span><span id="p-GOOGL" class="m">—</span></span>
+    <!-- duplicate for seamless scroll -->
+    <span class="tape-item"><span class="tape-sym">SPY</span><span id="p2-SPY" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">NVDA</span><span id="p2-NVDA" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">TSLA</span><span id="p2-TSLA" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AAPL</span><span id="p2-AAPL" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AMD</span><span id="p2-AMD" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">META</span><span id="p2-META" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">AMZN</span><span id="p2-AMZN" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">MSFT</span><span id="p2-MSFT" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">QQQ</span><span id="p2-QQQ" class="m">—</span></span>
+    <span class="tape-item"><span class="tape-sym">GOOGL</span><span id="p2-GOOGL" class="m">—</span></span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><div class="bdot"></div>Live option chain · Powered by Alpha Vantage</div>
+  <h1>Track where<br>the <em>smart money</em><br>is flowing.</h1>
+  <p>Real-time options chain, dark pool prints, and 13F hedge fund filings — unified in one terminal for retail traders and institutional desks alike.</p>
+  <div class="hero-ctas">
+    <button class="btn-lg primary" onclick="document.getElementById('flow').scrollIntoView({behavior:'smooth'})">View Live Flow ↓</button>
+    <button class="btn-lg ghost" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">See pricing →</button>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-label">Options Contracts</div>
+    <div class="stat-val g" id="stat-contracts">—</div>
+    <div class="stat-sub">loaded this session</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Current ticker</div>
+    <div class="stat-val" id="stat-ticker">NVDA</div>
+    <div class="stat-sub">select to change</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Unusual strikes</div>
+    <div class="stat-val a" id="stat-unusual">—</div>
+    <div class="stat-sub">high OI detected</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Data source</div>
+    <div class="stat-val g" style="font-size:14px;padding-top:4px;">Alpha Vantage</div>
+    <div class="stat-sub">options + quotes</div>
+  </div>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alert-banner">
+  <div class="alert-dot"></div>
+  <span class="alert-tag" id="alert-tag">LOADING</span>
+  <span id="alert-text" style="color:var(--muted);">Fetching live options data…</span>
+</div>
+
+<!-- DASHBOARD -->
+<div class="sec-label" id="flow">Live options terminal</div>
+<div class="dashboard">
+  <div class="dash-nav">
+    <div class="dash-tabs">
+      <button class="tab active" onclick="switchTab(this,'flow-panel')">Options Chain</button>
+      <button class="tab" onclick="switchTab(this,'quote-panel')">Stock Quote</button>
+      <button class="tab" onclick="switchTab(this,'hf-panel')">13F Filings</button>
+      <button class="tab" onclick="switchTab(this,'alerts-panel')">
+        Alerts
+        <span id="alert-count" style="background:var(--amber);color:#09090f;border-radius:100px;padding:1px 6px;font-size:9px;margin-left:4px;">0</span>
+      </button>
+    </div>
+    <div class="live-badge"><div class="bdot" style="width:5px;height:5px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0;"></div>Live</div>
+  </div>
+
+  <div class="filter-bar" id="main-filter-bar">
+    <span class="filter-label">Ticker:</span>
+    <select class="ticker-select" id="main-ticker" onchange="loadOptions()">
+      <option value="NVDA">NVDA</option>
+      <option value="SPY">SPY</option>
+      <option value="AAPL">AAPL</option>
+      <option value="TSLA">TSLA</option>
+      <option value="AMD">AMD</option>
+      <option value="META">META</option>
+      <option value="MSFT">MSFT</option>
+      <option value="AMZN">AMZN</option>
+      <option value="QQQ">QQQ</option>
+    </select>
+    <span class="filter-label" style="margin-left:8px;">Type:</span>
+    <button class="filter-btn active" onclick="setFilter('ALL',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('call',this)">Calls</button>
+    <button class="filter-btn" onclick="setFilter('put',this)">Puts</button>
+    <span class="filter-label" style="margin-left:8px;">Show:</span>
+    <button class="filter-btn active" id="filter-unusual" onclick="toggleUnusual(this)">Unusual only</button>
+    <button class="refresh-btn" onclick="loadOptions()">↻ Refresh</button>
+  </div>
+
+  <div class="dash-body">
+    <div class="dash-main">
+
+      <!-- OPTIONS CHAIN PANEL -->
+      <div id="flow-panel">
+        <table>
+          <thead><tr>
+            <th>Ticker</th><th>Type</th><th>Strike</th><th>Expiry</th>
+            <th>Last</th><th>Bid</th><th>Ask</th><th>Volume</th>
+            <th>Open Int.</th><th>IV</th><th>Delta</th><th>Flag</th>
+          </tr></thead>
+          <tbody id="flow-tbody">
+            <tr class="loading-row"><td colspan="12">Initializing…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STOCK QUOTE PANEL -->
+      <div id="quote-panel" style="display:none; padding:20px;">
+        <div id="quote-content" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+          <div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:20px;">Select a ticker and switch to this tab to see the full quote.</div>
+        </div>
+      </div>
+
+      <!-- 13F PANEL -->
+      <div id="hf-panel" style="display:none;">
+        <table>
+          <thead><tr>
+            <th>Fund</th><th>Ticker</th><th>Action</th><th>Shares</th><th>Value</th><th>% Port.</th><th>Quarter</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="sym">Millennium Mgmt</td><td>NVDA</td><td class="g">BUY</td><td>+2,400,000</td><td class="g">$2.1B</td><td>3.2%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">Citadel Advisors</td><td>SPY puts</td><td class="r">SELL</td><td>−1,200,000</td><td class="r">$1.2B</td><td>1.8%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">Tiger Global</td><td>META</td><td class="g">BUY</td><td>+900,000</td><td class="g">$450M</td><td>2.1%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">Two Sigma</td><td>AAPL</td><td class="r">SELL</td><td>−340,000</td><td class="r">$64M</td><td>0.8%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">Point72</td><td>AMD</td><td class="g">BUY</td><td>+1,100,000</td><td class="g">$159M</td><td>1.4%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">D.E. Shaw</td><td>MSFT</td><td class="g">BUY</td><td>+600,000</td><td class="g">$252M</td><td>1.1%</td><td class="m">Q1 2026</td></tr>
+            <tr><td class="sym">Bridgewater</td><td>QQQ</td><td class="g">BUY</td><td>+800,000</td><td class="g">$356M</td><td>2.4%</td><td class="m">Q1 2026</td></tr>
+          </tbody>
+        </table>
+        <div class="info-box">13F data from SEC EDGAR public filings. Updated quarterly. Live EDGAR parsing available on Pro plan.</div>
+      </div>
+
+      <!-- ALERTS PANEL -->
+      <div id="alerts-panel" style="display:none; padding:16px;">
+        <div id="alerts-list" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:32px;">Load options data first — alerts will appear here automatically.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div class="dash-side">
+      <div class="side-title">Top HF Moves</div>
+      <div class="hf-row"><div class="hf-name">Millennium</div><div class="hf-meta"><span>NVDA · Q1</span><span class="g">+2.4M</span></div></div>
+      <div class="hf-row"><div class="hf-name">Citadel</div><div class="hf-meta"><span>SPY · Q1</span><span class="r">−$1.2B</span></div></div>
+      <div class="hf-row"><div class="hf-name">Tiger Global</div><div class="hf-meta"><span>META · Q1</span><span class="g">+900K</span></div></div>
+      <div class="hf-row"><div class="hf-name">Two Sigma</div><div class="hf-meta"><span>AAPL · Q1</span><span class="r">−340K</span></div></div>
+      <div class="hf-row"><div class="hf-name">Point72</div><div class="hf-meta"><span>AMD · Q1</span><span class="g">+1.1M</span></div></div>
+
+      <div style="margin-top:20px;">
+        <div class="side-title">Flow Sentiment</div>
+        <div class="s-row">
+          <div class="s-track" style="background:rgba(0,229,160,.15);">
+            <div class="s-fill g" id="bull-bar" style="background:var(--green);width:50%;"></div>
+          </div>
+          <span id="bull-pct" class="g" style="font-size:10px;min-width:52px;">50% Bull</span>
+        </div>
+        <div class="s-row">
+          <div class="s-track" style="background:rgba(255,77,109,.15);">
+            <div class="s-fill" id="bear-bar" style="background:var(--red);width:50%;"></div>
+          </div>
+          <span id="bear-pct" class="r" style="font-size:10px;min-width:52px;">50% Bear</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="side-title">Watchlist</div>
+        <div id="watchlist-rows" style="display:flex;flex-direction:column;gap:5px;font-size:11px;">
+          <div class="m" style="font-size:10px;">Loading prices…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="sec-label" id="features">What's inside</div>
+<div class="features">
+  <div class="feat"><div class="feat-icon" style="background:rgba(0,229,160,.1);">⚡</div><h3>Real-time options chain</h3><p>Full options chain with strikes, greeks, IV, bid/ask, and open interest. Powered by Alpha Vantage — updated every session.</p></div>
+  <div class="feat"><div class="feat-icon" style="background:rgba(108,99,255,.1);">🏦</div><h3>Hedge fund 13F tracker</h3><p>SEC EDGAR 13F filings parsed automatically. Track Citadel, Millennium, Tiger Global and 1,800+ funds each quarter.</p></div>
+  <div class="feat"><div class="feat-icon" style="background:rgba(255,77,109,.1);">🔔</div><h3>Unusual activity alerts</h3><p>Alerts fire when volume or open interest spikes far above average. Catch big money moves before the crowd notices.</p></div>
+  <div class="feat"><div class="feat-icon" style="background:rgba(0,229,160,.1);">🌊</div><h3>Dark pool prints</h3><p>Off-exchange block trades from FINRA TRF. See where institutions are quietly accumulating large positions.</p></div>
+  <div class="feat"><div class="feat-icon" style="background:rgba(108,99,255,.1);">🔌</div><h3>REST & WebSocket API</h3><p>Build your own algos on top of clean, normalized data. Full historical access and streaming on Pro plan.</p></div>
+  <div class="feat"><div class="feat-icon" style="background:rgba(245,166,35,.1);">📊</div><h3>Sentiment heatmaps</h3><p>Live bull/bear ratios calculated from real call vs put volume. See where institutional money is positioning.</p></div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="sec-label">How it works</div>
+<div class="how">
+  <div class="step"><div class="step-num">01</div><h4>Connect your account</h4><p>Sign up and connect via API or use our web terminal. No software to install, works in any browser.</p></div>
+  <div class="step"><div class="step-num">02</div><h4>Set your filters</h4><p>Filter by ticker, strike, expiry, IV, or delta. Get only the signals that matter to your strategy.</p></div>
+  <div class="step"><div class="step-num">03</div><h4>Get alerted instantly</h4><p>Unusual flow hits your phone, Discord, or webhook before retail traders even see the move.</p></div>
+  <div class="step"><div class="step-num">04</div><h4>Trade with conviction</h4><p>Cross-reference options flow with hedge fund 13F positioning for high-conviction setups.</p></div>
+</div>
+
+<!-- PRICING -->
+<div class="sec-label" id="pricing">Pricing</div>
+<div class="pricing">
+  <div class="price-card">
+    <div class="tier">Retail</div>
+    <div class="price">$49</div>
+    <div class="price-note">per month · cancel anytime</div>
+    <ul class="feat-list">
+      <li>Real-time options chain</li>
+      <li>Unusual activity alerts</li>
+      <li>Top 50 hedge fund tracker</li>
+      <li>1 webhook endpoint</li>
+      <li>Discord + email alerts</li>
+      <li>7-day free trial</li>
+    </ul>
+    <button class="price-btn outline">Get started</button>
+  </div>
+  <div class="price-card featured">
+    <div><span class="popular-tag">MOST POPULAR</span></div>
+    <div class="tier">Pro</div>
+    <div class="price" style="color:var(--green)">$149</div>
+    <div class="price-note">per month · cancel anytime</div>
+    <ul class="feat-list">
+      <li>Everything in Retail</li>
+      <li>Dark pool prints</li>
+      <li>All 1,840 hedge funds</li>
+      <li>REST + WebSocket API</li>
+      <li>Historical flow (2 years)</li>
+      <li>AI sentiment scoring</li>
+      <li>Priority support</li>
+    </ul>
+    <button class="price-btn solid">Start free trial</button>
+  </div>
+  <div class="price-card">
+    <div class="tier">Institutional</div>
+    <div class="price">Custom</div>
+    <div class="price-note">contact us for pricing</div>
+    <ul class="feat-list">
+      <li>Everything in Pro</li>
+      <li>Co-location / FIX feed</li>
+      <li>Dedicated account manager</li>
+      <li>White-label options</li>
+      <li>SLA + uptime guarantee</li>
+      <li>Compliance reporting</li>
+    </ul>
+    <button class="price-btn outline">Contact sales</button>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="sec-label">What traders say</div>
+<div class="testimonials">
+  <div class="testi">
+    <div class="testi-text">"FlowDesk caught a massive NVDA sweep 20 minutes before the stock ran 8%. I've never had edge like this from any other tool."</div>
+    <div class="testi-author"><div class="testi-avatar" style="background:rgba(0,229,160,.15);color:var(--green);">MR</div><div><div class="testi-name">Marcus R.</div><div class="testi-role">Retail options trader</div></div></div>
+  </div>
+  <div class="testi">
+    <div class="testi-text">"The 13F tracker alone is worth the subscription. Knowing what Millennium and Citadel are holding changes how I read every setup."</div>
+    <div class="testi-author"><div class="testi-avatar" style="background:rgba(108,99,255,.15);color:#b0a8ff;">SK</div><div><div class="testi-name">Sarah K.</div><div class="testi-role">Prop desk analyst</div></div></div>
+  </div>
+  <div class="testi">
+    <div class="testi-text">"We integrated the API into our algo in a weekend. The data is clean, the latency is real, and support actually responds."</div>
+    <div class="testi-author"><div class="testi-avatar" style="background:rgba(245,166,35,.15);color:var(--amber);">JL</div><div><div class="testi-name">James L.</div><div class="testi-role">Quant fund · $40M AUM</div></div></div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>Start tracking smart money<br>in under 2 minutes.</h2>
+  <p>No credit card required for your 7-day free trial. Cancel anytime.</p>
+  <button class="btn-lg primary">Create free account →</button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Flow<span style="color:var(--green)">Desk</span></div>
+  <div class="footer-links">
+    <a href="#">Product</a><a href="#pricing">Pricing</a><a href="#">API Docs</a><a href="#">Terms</a><a href="#">Privacy</a>
+  </div>
+  <div class="footer-copy">© 2026 FlowDesk Inc. · Not financial advice.</div>
+</footer>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(el, panelId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['flow-panel','quote-panel','hf-panel','alerts-panel'].forEach(id => {
+    document.getElementById(id).style.display = id === panelId ? 'block' : 'none';
+  });
+  document.getElementById('main-filter-bar').style.display = panelId === 'flow-panel' ? 'flex' : 'none';
+  if (panelId === 'quote-panel') loadQuote();
+}
+
+// ── Filters ───────────────────────────────────────────────
+let showUnusualOnly = true;
+function setFilter(type, el) {
+  filterType = type;
+  document.querySelectorAll('.filter-btn:not(#filter-unusual)').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderOptions();
+}
+function toggleUnusual(el) {
+  showUnusualOnly = !showUnusualOnly;
+  el.classList.toggle('active', showUnusualOnly);
+  el.textContent = showUnusualOnly ? 'Unusual only' : 'Show all';
+  renderOptions();
+}
+
+// ── Load single stock quote ───────────────────────────────
+async function loadQuote() {
+  const ticker = document.getElementById('main-ticker').value;
+  const el = document.getElementById('quote-content');
+  el.innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:20px;">Loading ${ticker} quote…</div>`;
+  try {
+    const data = await avFetch({ function: 'GLOBAL_QUOTE', symbol: ticker });
+    const q = data['Global Quote'];
+    if (!q || !q['05. price']) throw new Error('No quote data returned');
+    const price = parseFloat(q['05. price']);
+    const change = parseFloat(q['09. change']);
+    const changePct = parseFloat(q['10. change percent']);
+    const isUp = change >= 0;
+    const cards = [
+      ['Price', '$' + price.toFixed(2), isUp ? 'g' : 'r'],
+      ['Change', (isUp?'+':'') + change.toFixed(2), isUp ? 'g' : 'r'],
+      ['Change %', (isUp?'+':'') + changePct.toFixed(2) + '%', isUp ? 'g' : 'r'],
+      ['Open', '$' + parseFloat(q['02. open']).toFixed(2), ''],
+      ['High', '$' + parseFloat(q['03. high']).toFixed(2), 'g'],
+      ['Low', '$' + parseFloat(q['04. low']).toFixed(2), 'r'],
+      ['Volume', parseInt(q['06. volume']).toLocaleString(), ''],
+      ['Prev Close', '$' + parseFloat(q['08. previous close']).toFixed(2), ''],
+      ['Latest Day', q['07. latest trading day'], 'm'],
+    ];
+    el.innerHTML = cards.map(([label, val, cls]) => `
+      <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:16px 18px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">${label}</div>
+        <div class="${cls}" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;">${val}</div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="error-box" style="grid-column:1/-1;">⚠ ${e.message}</div>`;
+  }
+}
+
+// ── Load options chain ────────────────────────────────────
+async function loadOptions() {
+  const ticker = document.getElementById('main-ticker').value;
+  document.getElementById('stat-ticker').textContent = ticker;
+  document.getElementById('flow-tbody').innerHTML = `<tr class="loading-row"><td colspan="12">Loading ${ticker} options chain…</td></tr>`;
+  setStatus('loading');
+
+  if (AV_KEY === 'PASTE_YOUR_ALPHAVANTAGE_KEY_HERE') {
+    setStatus('error');
+    document.getElementById('flow-tbody').innerHTML = `<tr><td colspan="12"><div class="error-box">
+      ⚠ API key not configured.<br>
+      <span style="color:var(--muted);font-size:10px;">
+        Open this file in Notepad → find PASTE_YOUR_ALPHAVANTAGE_KEY_HERE → replace with your key from alphavantage.co → save → refresh page.
+      </span>
+    </div></td></tr>`;
+    document.getElementById('alert-text').innerHTML = '<span style="color:var(--red);">⚠ Add your Alpha Vantage API key to activate live data</span>';
+    document.getElementById('alert-tag').textContent = 'CONFIG';
+    return;
+  }
+
+  try {
+    const data = await avFetch({ function: 'HISTORICAL_OPTIONS', symbol: ticker });
+    const raw = data['data'] || [];
+    if (!raw.length) throw new Error('No options data returned for ' + ticker + '. Alpha Vantage may not have options data on the free tier for this symbol. Try SPY or AAPL.');
+
+    optionsData.calls = raw.filter(r => r.type === 'call');
+    optionsData.puts  = raw.filter(r => r.type === 'put');
+
+    const total = raw.length;
+    document.getElementById('stat-contracts').textContent = total.toLocaleString();
+
+    // Find unusual (high volume relative to OI)
+    const unusual = raw.filter(r => {
+      const vol = parseInt(r.volume) || 0;
+      const oi  = parseInt(r.open_interest) || 1;
+      return vol > 0 && (vol / oi) > 0.5 && vol > 100;
+    });
+    alertCount = unusual.length;
+    document.getElementById('stat-unusual').textContent = unusual.length;
+    document.getElementById('alert-count').textContent = unusual.length;
+
+    // Sentiment
+    const callVol = optionsData.calls.reduce((s,r) => s + (parseInt(r.volume)||0), 0);
+    const putVol  = optionsData.puts.reduce((s,r)  => s + (parseInt(r.volume)||0), 0);
+    const total2  = callVol + putVol || 1;
+    const bullPct = Math.round((callVol / total2) * 100);
+    document.getElementById('bull-bar').style.width = bullPct + '%';
+    document.getElementById('bear-bar').style.width = (100-bullPct) + '%';
+    document.getElementById('bull-pct').textContent = bullPct + '% Bull';
+    document.getElementById('bear-pct').textContent = (100-bullPct) + '% Bear';
+
+    // Alert banner
+    if (unusual.length > 0) {
+      const top = unusual.sort((a,b) => (parseInt(b.volume)||0) - (parseInt(a.volume)||0))[0];
+      document.getElementById('alert-tag').textContent = 'UNUSUAL FLOW';
+      document.getElementById('alert-text').innerHTML =
+        `<strong style="color:var(--text)">${ticker}</strong> — ` +
+        `${top.type?.toUpperCase()} $${top.strike} exp ${top.expiration} · ` +
+        `Vol: ${parseInt(top.volume).toLocaleString()} · ` +
+        `<span style="color:var(--amber)">${unusual.length} unusual strikes detected</span>`;
+    }
+
+    // Build alerts panel
+    const alertsEl = document.getElementById('alerts-list');
+    if (unusual.length === 0) {
+      alertsEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px;">No unusual activity detected for ${ticker}.</div>`;
+    } else {
+      alertsEl.innerHTML = unusual.slice(0,10).map(r => {
+        const isCall = r.type === 'call';
+        const vol = parseInt(r.volume)||0;
+        const oi  = parseInt(r.open_interest)||1;
+        const ratio = (vol/oi).toFixed(1);
+        const c = isCall ? 'var(--green)' : 'var(--red)';
+        const bc = isCall ? 'rgba(0,229,160,.2)' : 'rgba(255,77,109,.2)';
+        const bg = isCall ? 'rgba(0,229,160,.05)' : 'rgba(255,77,109,.05)';
+        return `<div style="background:${bg};border:0.5px solid ${bc};border-radius:8px;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div style="width:7px;height:7px;background:${c};border-radius:50%;flex-shrink:0;"></div>
+          <span style="color:${c};font-weight:500;">${ticker}</span>
+          <span class="m">${r.type?.toUpperCase()} $${r.strike} · exp ${r.expiration}</span>
+          <span class="m">Vol ${vol.toLocaleString()} · OI ${oi.toLocaleString()} · <span style="color:var(--amber)">${ratio}x ratio</span></span>
+        </div>`;
+      }).join('');
+    }
+
+    renderOptions();
+    setStatus('ok');
+  } catch(e) {
+    setStatus('error');
+    document.getElementById('flow-tbody').innerHTML = `<tr><td colspan="12"><div class="error-box">⚠ ${e.message}</div></td></tr>`;
+    document.getElementById('alert-tag').textContent = 'ERROR';
+    document.getElementById('alert-text').innerHTML = `<span style="color:var(--red);">${e.message}</span>`;
+  }
+}
+
+// ── Render options table ──────────────────────────────────
+function renderOptions() {
+  const ticker = document.getElementById('main-ticker').value;
+  let rows = [];
+  if (filterType === 'ALL' || filterType === 'call') rows = rows.concat(optionsData.calls.map(r => ({...r, _type:'call'})));
+  if (filterType === 'ALL' || filterType === 'put')  rows = rows.concat(optionsData.puts.map(r => ({...r, _type:'put'})));
+
+  if (showUnusualOnly) {
+    rows = rows.filter(r => {
+      const vol = parseInt(r.volume)||0;
+      const oi  = parseInt(r.open_interest)||1;
+      return vol > 0 && (vol/oi) > 0.5 && vol > 100;
+    });
+  }
+
+  // Sort by volume desc
+  rows.sort((a,b) => (parseInt(b.volume)||0) - (parseInt(a.volume)||0));
+
+  const tbody = document.getElementById('flow-tbody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="12" style="color:var(--muted);">No ${showUnusualOnly?'unusual ':''}${filterType !== 'ALL' ? filterType : ''} contracts found. Toggle "Unusual only" off to see all.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.slice(0,40).map(r => {
+    const isCall = r._type === 'call';
+    const vol = parseInt(r.volume)||0;
+    const oi  = parseInt(r.open_interest)||1;
+    const ratio = vol/oi;
+    const isUnusual = ratio > 0.5 && vol > 100;
+    const isBig = ratio > 2;
+    const flag = isBig
+      ? '<span class="badge unusual">UNUSUAL</span>'
+      : isUnusual
+        ? '<span class="badge sweep">HIGH VOL</span>'
+        : '<span class="badge block">NORMAL</span>';
+    const last = parseFloat(r.last)||0;
+    const bid  = parseFloat(r.bid)||0;
+    const ask  = parseFloat(r.ask)||0;
+    const iv   = r.implied_volatility ? (parseFloat(r.implied_volatility)*100).toFixed(1)+'%' : '—';
+    const delta = r.delta ? parseFloat(r.delta).toFixed(3) : '—';
+
+    return `<tr>
+      <td class="sym">${ticker}</td>
+      <td><span class="badge ${isCall?'call':'put'}">${r._type.toUpperCase()}</span></td>
+      <td>$${r.strike}</td>
+      <td class="m">${r.expiration || '—'}</td>
+      <td class="${isCall?'g':'r'}">$${last.toFixed(2)}</td>
+      <td class="m">$${bid.toFixed(2)}</td>
+      <td class="m">$${ask.toFixed(2)}</td>
+      <td class="${vol>500?'g':''}">${vol.toLocaleString()}</td>
+      <td class="m">${oi.toLocaleString()}</td>
+      <td class="${parseFloat(r.implied_volatility||0)>0.5?'a':''}">${iv}</td>
+      <td class="m">${delta}</td>
+      <td>${flag}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Load ticker tape prices ───────────────────────────────
+let priceIndex = 0;
+async function loadNextPrice() {
+  if (priceIndex >= WATCH.length) return;
+  const ticker = WATCH[priceIndex++];
+  try {
+    const data = await avFetch({ function: 'GLOBAL_QUOTE', symbol: ticker });
+    const q = data['Global Quote'];
+    if (!q || !q['05. price']) return;
+    const price = parseFloat(q['05. price']);
+    const chgPct = parseFloat(q['10. change percent']);
+    const isUp = chgPct >= 0;
+    const txt = `$${price.toFixed(2)} ${isUp?'▲':'▼'} ${Math.abs(chgPct).toFixed(2)}%`;
+    const cls = isUp ? 'up' : 'dn';
+    const e1 = document.getElementById(`p-${ticker}`);
+    const e2 = document.getElementById(`p2-${ticker}`);
+    if (e1) { e1.textContent = txt; e1.className = cls; }
+    if (e2) { e2.textContent = txt; e2.className = cls; }
+
+    // Update watchlist
+    const wl = document.getElementById('watchlist-rows');
+    const existing = document.getElementById(`wl-${ticker}`);
+    const html = `<div id="wl-${ticker}" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(255,255,255,.04);">
+      <span style="font-weight:500;">${ticker}</span>
+      <span>$${price.toFixed(2)}</span>
+      <span class="${cls}">${isUp?'+':''}${chgPct.toFixed(2)}%</span>
+    </div>`;
+    if (existing) existing.outerHTML = html;
+    else wl.insertAdjacentHTML('beforeend', html);
+
+    // Stagger next price load by 13s to stay within rate limits
+    if (priceIndex < WATCH.length) setTimeout(loadNextPrice, 13000);
+  } catch(e) {
+    if (priceIndex < WATCH.length) setTimeout(loadNextPrice, 15000);
+  }
+}
+
+// ── Boot ─────────────────────────────────────────────────
+async function init() {
+  if (AV_KEY === 'PASTE_YOUR_ALPHAVANTAGE_KEY_HERE') {
+    setStatus('error');
+    document.getElementById('alert-tag').textContent = 'CONFIG';
+    document.getElementById('alert-text').innerHTML = `<span style="color:var(--red);">⚠ Open this file in Notepad → find <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;">PASTE_YOUR_ALPHAVANTAGE_KEY_HERE</code> → replace with your key → save → refresh</span>`;
+    document.getElementById('flow-tbody').innerHTML = `<tr><td colspan="12"><div class="error-box">
+      ⚠ Alpha Vantage API key not set.<br>
+      <span style="color:var(--muted);font-size:11px;">
+        1. Get a free key at <strong style="color:var(--text);">alphavantage.co/support/#api-key</strong><br>
+        2. Open this file in Notepad<br>
+        3. Find: PASTE_YOUR_ALPHAVANTAGE_KEY_HERE<br>
+        4. Replace with your key → Save → Refresh
+      </span>
+    </div></td></tr>`;
+    return;
+  }
+  loadOptions();
+  setTimeout(loadNextPrice, 2000);
+}
+
+init();
+</script>
+</body>
+</html>
